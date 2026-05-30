@@ -4,8 +4,10 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: mysecretpassword
+      MYSQL_ROOT_PASSWORD: rootpassword123
       MYSQL_DATABASE: game_debt_tracker
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mysecretpassword
     ports:
       - "3306:3306"
     volumes:
@@ -17,7 +19,7 @@ services:
     ports:
       - "80:3000"
     environment:
-      DATABASE_URL: "mysql://root:mysecretpassword@db:3306/game_debt_tracker"
+      DATABASE_URL: "mysql://myuser:mysecretpassword@db:3306/game_debt_tracker"
     depends_on:
       - db
 
