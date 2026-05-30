@@ -1,7 +1,8 @@
 #!/bin/sh
-echo "Waiting for database to be ready..."
-sleep 15
 echo "Pushing database schema..."
-npx prisma db push --accept-data-loss
+until npx prisma db push --accept-data-loss; do
+  echo "Database is unavailable - sleeping for 5 seconds..."
+  sleep 5
+done
 echo "Starting Next.js..."
 exec node server.js
