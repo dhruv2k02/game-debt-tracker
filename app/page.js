@@ -1,66 +1,221 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [players, setPlayers] = useState([]);
+  const [debts, setDebts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchState = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/game');
+      const data = await res.json();
+      setPlayers(data.players || []);
+      setDebts(data.debts || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchState();
+  }, []);
+
+  const handleReset = async () => {
+    if (!confirm('Are you sure you want to reset all data?')) return;
+    await fetch('/api/game', { method: 'DELETE' });
+    await fetchState();
+  };
+
+  if (loading) return <div className="container"><p>Loading...</p></div>;
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="container">
+      <div className="header">
+        <h1 className="title">Game Debt Tracker</h1>
+        {players.length > 0 && (
+          <button className="btn danger" onClick={handleReset}>Reset All</button>
+        )}
+      </div>
+      
+      {players.length === 0 ? (
+        <SetupGame onSetupComplete={fetchState} />
+      ) : (
+        <div className="trees-grid">
+          {players.map(player => (
+            <PlayerTree 
+              key={player.id} 
+              player={player} 
+              allPlayers={players} 
+              debts={debts} 
+              onDebtUpdated={fetchState} 
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
+      )}
+    </div>
+  );
+}
+
+function SetupGame({ onSetupComplete }) {
+  const [numPlayers, setNumPlayers] = useState(3);
+  const [playerNames, setPlayerNames] = useState(['', '', '']);
+  
+  const handleNumChange = (e) => {
+    const num = parseInt(e.target.value) || 0;
+    setNumPlayers(num);
+    setPlayerNames(Array(num).fill(''));
+  };
+
+  const handleNameChange = (index, value) => {
+    const newNames = [...playerNames];
+    newNames[index] = value;
+    setPlayerNames(newNames);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (playerNames.some(name => !name.trim())) return alert('Please fill in all player names.');
+    
+    await fetch('/api/game', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ players: playerNames })
+    });
+    onSetupComplete();
+  };
+
+  return (
+    <div className="glass-panel setup-form">
+      <h2 style={{marginTop: 0}}>Setup New Game</h2>
+      <div className="player-input-row">
+        <label style={{minWidth: '140px'}}>Number of Players:</label>
+        <input 
+          type="number" 
+          className="input-field" 
+          value={numPlayers} 
+          onChange={handleNumChange} 
+          min="2" 
+          max="10" 
+        />
+      </div>
+      <form onSubmit={handleSubmit} className="player-inputs">
+        {playerNames.map((name, i) => (
+          <input
+            key={i}
+            className="input-field"
+            placeholder={`Player ${i + 1} Name`}
+            value={name}
+            onChange={(e) => handleNameChange(i, e.target.value)}
+          />
+        ))}
+        <button type="submit" className="btn">Start Game</button>
+      </form>
+    </div>
+  );
+}
+
+function PlayerTree({ player, allPlayers, debts, onDebtUpdated }) {
+  const otherPlayers = allPlayers.filter(p => p.id !== player.id);
+  const leaves = [...otherPlayers, { id: 'BANK', name: 'Bank' }];
+
+  return (
+    <div className="glass-panel">
+      <div className="tree-root">{player.name}</div>
+      <div className="tree-leaves">
+        {leaves.map(leaf => (
+          <LeafNode 
+            key={leaf.id} 
+            rootId={player.id} 
+            leaf={leaf} 
+            debts={debts} 
+            onDebtUpdated={onDebtUpdated} 
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeafNode({ rootId, leaf, debts, onDebtUpdated }) {
+  const debtFromRoot = debts.find(d => d.fromId === rootId && d.toId === leaf.id)?.amount || 0;
+  const debtFromLeaf = debts.find(d => d.fromId === leaf.id && d.toId === rootId)?.amount || 0;
+  
+  // amount leaf owes root
+  const netLeafOwesRoot = debtFromLeaf - debtFromRoot;
+  
+  const [sign, setSign] = useState('+');
+  const [amount, setAmount] = useState('');
+
+  const handleTransaction = async () => {
+    const val = parseInt(amount);
+    if (!val || val <= 0) return;
+    
+    const delta = sign === '+' ? val : -val;
+
+    await fetch('/api/debts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromId: leaf.id,
+        toId: rootId,
+        delta
+      })
+    });
+    setAmount('');
+    onDebtUpdated();
+  };
+
+  let debtText = 'No debt';
+  let debtClass = 'neutral';
+  if (netLeafOwesRoot > 0) {
+    debtText = `Owes ${netLeafOwesRoot}`;
+    debtClass = 'positive';
+  } else if (netLeafOwesRoot < 0) {
+    debtText = `You owe ${-netLeafOwesRoot}`;
+    debtClass = 'negative';
+  }
+
+  return (
+    <div className="leaf-node">
+      <div className="leaf-header">
+        <span>{leaf.name}</span>
+        <span className={`debt-amount ${debtClass}`}>{debtText}</span>
+      </div>
+      <div className="debt-controller">
+        <div className="radio-group">
+          <input 
+            type="radio" 
+            id={`plus-${rootId}-${leaf.id}`} 
+            className="radio-input" 
+            name={`sign-${rootId}-${leaf.id}`} 
+            checked={sign === '+'} 
+            onChange={() => setSign('+')}
+          />
+          <label htmlFor={`plus-${rootId}-${leaf.id}`} className="radio-label plus">+</label>
+          
+          <input 
+            type="radio" 
+            id={`minus-${rootId}-${leaf.id}`} 
+            className="radio-input" 
+            name={`sign-${rootId}-${leaf.id}`} 
+            checked={sign === '-'} 
+            onChange={() => setSign('-')}
+          />
+          <label htmlFor={`minus-${rootId}-${leaf.id}`} className="radio-label minus">-</label>
+        </div>
+        <input 
+          type="number" 
+          className="input-field debt-input" 
+          placeholder="Amount" 
+          value={amount} 
+          onChange={e => setAmount(e.target.value)}
+        />
+        <button className="btn icon-btn" onClick={handleTransaction}>Go</button>
+      </div>
     </div>
   );
 }
