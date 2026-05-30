@@ -12,8 +12,11 @@ export default function Home() {
     try {
       const res = await fetch('/api/game');
       const data = await res.json();
-      setPlayers(data.players || []);
-      setDebts(data.debts || []);
+      const newPlayers = data.players || [];
+      const newDebts = data.debts || [];
+      // Only update state if data actually changed
+      setPlayers(prev => JSON.stringify(prev) !== JSON.stringify(newPlayers) ? newPlayers : prev);
+      setDebts(prev => JSON.stringify(prev) !== JSON.stringify(newDebts) ? newDebts : prev);
     } catch (e) {
       console.error(e);
     }
