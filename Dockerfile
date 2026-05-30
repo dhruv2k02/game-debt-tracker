@@ -55,6 +55,7 @@ ENV HOSTNAME "0.0.0.0"
 USER root
 RUN npm install -g prisma@5.21.0
 COPY docker-entrypoint.sh ./
+RUN sed -i 's/\r$//' docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 USER nextjs
 
