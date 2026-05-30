@@ -52,7 +52,7 @@ ENV HOSTNAME "0.0.0.0"
 
 # Install prisma to run db push at runtime
 USER root
-RUN npm install -g prisma
+RUN npm install -g prisma@5.21.0
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 USER nextjs
