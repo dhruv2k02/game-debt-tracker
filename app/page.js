@@ -7,8 +7,8 @@ export default function Home() {
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchState = async () => {
-    setLoading(true);
+  const fetchState = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const res = await fetch('/api/game');
       const data = await res.json();
@@ -17,11 +17,17 @@ export default function Home() {
     } catch (e) {
       console.error(e);
     }
-    setLoading(false);
+    if (showLoading) setLoading(false);
   };
 
   useEffect(() => {
-    fetchState();
+    fetchState(true);
+  }, []);
+
+  // Auto-poll every 3 seconds so all browsers stay in sync
+  useEffect(() => {
+    const interval = setInterval(() => fetchState(false), 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleReset = async () => {
