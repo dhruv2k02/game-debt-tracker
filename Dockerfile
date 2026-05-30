@@ -50,4 +50,11 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+# Install prisma to run db push at runtime
+USER root
+RUN npm install -g prisma
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+USER nextjs
+
+CMD ["./docker-entrypoint.sh"]
