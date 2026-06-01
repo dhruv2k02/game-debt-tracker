@@ -305,12 +305,12 @@ body {
 }
 
 .txn-entry.txn-in .txn-msg {
-  color: #34d399;
+  color: #f87171;
   font-weight: 600;
 }
 
 .txn-entry.txn-out .txn-msg {
-  color: #f87171;
+  color: #34d399;
   font-weight: 600;
 }
 
