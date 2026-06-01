@@ -5,6 +5,11 @@ export async function POST(request) {
   try {
     const { fromId, toId, delta } = await request.json();
     
+    // Log the transaction
+    await prisma.transaction.create({
+      data: { fromId, toId, amount: delta }
+    });
+
     const d1 = await prisma.debt.findUnique({ where: { fromId_toId: { fromId, toId } } });
     const d2 = await prisma.debt.findUnique({ where: { fromId_toId: { fromId: toId, toId: fromId } } });
 

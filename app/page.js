@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 export default function Home() {
   const [players, setPlayers] = useState([]);
   const [debts, setDebts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchState = async (showLoading = false) => {
@@ -14,9 +15,11 @@ export default function Home() {
       const data = await res.json();
       const newPlayers = data.players || [];
       const newDebts = data.debts || [];
+      const newTxns = data.transactions || [];
       // Only update state if data actually changed
       setPlayers(prev => JSON.stringify(prev) !== JSON.stringify(newPlayers) ? newPlayers : prev);
       setDebts(prev => JSON.stringify(prev) !== JSON.stringify(newDebts) ? newDebts : prev);
+      setTransactions(prev => JSON.stringify(prev) !== JSON.stringify(newTxns) ? newTxns : prev);
     } catch (e) {
       console.error(e);
     }
@@ -60,6 +63,7 @@ export default function Home() {
               player={player} 
               allPlayers={players} 
               debts={debts} 
+              transactions={transactions}
               onDebtUpdated={fetchState} 
             />
           ))}
@@ -127,9 +131,11 @@ function SetupGame({ onSetupComplete }) {
   );
 }
 
-function PlayerTree({ player, allPlayers, debts, onDebtUpdated }) {
+function PlayerTree({ player, allPlayers, debts, transactions, onDebtUpdated }) {
   const otherPlayers = allPlayers.filter(p => p.id !== player.id);
   const leaves = [...otherPlayers, { id: 'BANK', name: 'Bank' }];
+  // Transactions relevant to this player
+  const myTxns = transactions.filter(t => t.fromId === player.id || t.toId === player.id);
 
   return (
     <div className="glass-panel">
@@ -144,6 +150,48 @@ function PlayerTree({ player, allPlayers, debts, onDebtUpdated }) {
             onDebtUpdated={onDebtUpdated} 
           />
         ))}
+      </div>
+      <TransactionHistory transactions={myTxns} playerId={player.id} allPlayers={allPlayers} />
+    </div>
+  );
+}
+
+function TransactionHistory({ transactions, playerId, allPlayers }) {
+  if (transactions.length === 0) return null;
+
+  const getName = (id) => {
+    if (id === 'BANK') return 'Bank';
+    return allPlayers.find(p => p.id === id)?.name || id;
+  };
+
+  return (
+    <div className="txn-history">
+      <div className="txn-title">Transaction History</div>
+      <div className="txn-list">
+        {transactions.map(t => {
+          // fromId owes toId. delta is the amount added.
+          // If toId === playerId and amount > 0: someone owes this player (incoming, green)
+          // If fromId === playerId and amount > 0: this player owes someone (outgoing, red)
+          // If toId === playerId and amount < 0: this player is paying back (outgoing, red)
+          // If fromId === playerId and amount < 0: someone paid this player back (incoming, green)
+          const isIncoming = (t.toId === playerId && t.amount > 0) || (t.fromId === playerId && t.amount < 0);
+          const absAmount = Math.abs(t.amount);
+          const otherPlayer = t.toId === playerId ? getName(t.fromId) : getName(t.toId);
+          
+          let message;
+          if (isIncoming) {
+            message = `+${absAmount} from ${otherPlayer}`;
+          } else {
+            message = `-${absAmount} to ${otherPlayer}`;
+          }
+
+          return (
+            <div key={t.id} className={`txn-entry ${isIncoming ? 'txn-in' : 'txn-out'}`}>
+              <span className="txn-msg">{message}</span>
+              <span className="txn-time">{new Date(t.createdAt).toLocaleTimeString()}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

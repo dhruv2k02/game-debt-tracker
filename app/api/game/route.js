@@ -5,7 +5,8 @@ export async function GET() {
   try {
     const players = await prisma.player.findMany();
     const debts = await prisma.debt.findMany();
-    return NextResponse.json({ players, debts });
+    const transactions = await prisma.transaction.findMany({ orderBy: { createdAt: 'desc' } });
+    return NextResponse.json({ players, debts, transactions });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -16,6 +17,7 @@ export async function POST(request) {
     const { players } = await request.json();
     
     // Reset everything
+    await prisma.transaction.deleteMany();
     await prisma.debt.deleteMany();
     await prisma.player.deleteMany();
 
@@ -34,6 +36,7 @@ export async function POST(request) {
 
 export async function DELETE() {
   try {
+    await prisma.transaction.deleteMany();
     await prisma.debt.deleteMany();
     await prisma.player.deleteMany();
     return NextResponse.json({ success: true });

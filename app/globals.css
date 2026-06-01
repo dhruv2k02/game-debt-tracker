@@ -238,3 +238,66 @@ body {
   padding: 8px 12px;
 }
 
+/* Transaction History */
+.txn-history {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.txn-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.txn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.txn-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.txn-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.txn-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.txn-entry.txn-in .txn-msg {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.txn-entry.txn-out .txn-msg {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.txn-time {
+  color: var(--text-secondary);
+  font-size: 11px;
+}

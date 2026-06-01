@@ -22,3 +22,11 @@ model Debt {
   
   @@unique([fromId, toId])
 }
+
+model Transaction {
+  id        String   @id @default(uuid())
+  fromId    String
+  toId      String
+  amount    Int
+  createdAt DateTime @default(now())
+}
