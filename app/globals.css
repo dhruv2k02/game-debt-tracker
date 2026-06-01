@@ -238,6 +238,23 @@ body {
   padding: 8px 12px;
 }
 
+/* Sign Hint */
+.sign-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.sign-hint.hint-out {
+  color: #f87171;
+}
+
+.sign-hint.hint-in {
+  color: #34d399;
+}
+
 /* Transaction History */
 .txn-history {
   margin-top: 1.5rem;

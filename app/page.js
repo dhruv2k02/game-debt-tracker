@@ -273,6 +273,9 @@ function LeafNode({ rootId, leaf, debts, onDebtUpdated }) {
         />
         <button className="btn icon-btn" onClick={handleTransaction}>Go</button>
       </div>
+      <div className={`sign-hint ${sign === '+' ? 'hint-out' : 'hint-in'}`}>
+        {sign === '+' ? 'You have to give' : 'You will get'}
+      </div>
     </div>
   );
 }
